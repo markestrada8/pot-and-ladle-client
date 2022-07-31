@@ -1,20 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TextField, Button, Typography, Paper } from '@material-ui/core';
 import FileBase from 'react-file-base64';
 import useStyles from './styles.js';
+import { useDispatch, useSelector } from 'react-redux';
+import { createPost, updatePost } from '../../redux/actions/posts';
 
-const Form = () => {
+const Form = ({ currentId, setCurrentId }) => {
   const [postData, setPostData] = useState({
-    author: '',
+    creator: '',
     title: '',
-    body: '',
+    message: '',
     tags: '',
     selectedFile: '',
   });
+  const post = useSelector((state) =>
+    currentId ? state.posts.find((post) => post._id === currentId) : null
+  );
+  const dispatch = useDispatch();
   const classes = useStyles();
-  const handleSubmit = () => {};
 
-  const clear = () => {};
+  useEffect(() => {
+    if (post) {
+      setPostData(post);
+    }
+  }, [post]);
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+
+    if (currentId) {
+      dispatch(updatePost(currentId, postData));
+    } else {
+      dispatch(createPost(postData));
+    }
+    clear();
+  };
+
+  const clear = () => {
+    setCurrentId(null);
+    setPostData({
+      creator: '',
+      title: '',
+      message: '',
+      tags: '',
+      selectedFile: '',
+    });
+  };
 
   return (
     <Paper className={classes.paper}>
@@ -24,15 +55,17 @@ const Form = () => {
         className={`${classes.form} ${classes.root}`}
         onSubmit={handleSubmit}
       >
-        <Typography variant="h6">Create a Recipe</Typography>
+        <Typography variant="h6">
+          {currentId ? 'Edit' : 'Create'} a Recipe
+        </Typography>
         <TextField
-          name="author"
+          name="creator"
           variant="outlined"
-          label="Author"
+          label="Creator"
           fullWidth
           value={postData.creator}
           onChange={(event) =>
-            setPostData({ ...postData, author: event.target.value })
+            setPostData({ ...postData, creator: event.target.value })
           }
         />
         <TextField
@@ -40,19 +73,19 @@ const Form = () => {
           variant="outlined"
           label="Title"
           fullWidth
-          value={postData.creator}
+          value={postData.title}
           onChange={(event) =>
             setPostData({ ...postData, title: event.target.value })
           }
         />
         <TextField
-          name="body"
+          name="message"
           variant="outlined"
-          label="Body"
+          label="Message"
           fullWidth
-          value={postData.creator}
+          value={postData.message}
           onChange={(event) =>
-            setPostData({ ...postData, body: event.target.value })
+            setPostData({ ...postData, message: event.target.value })
           }
         />
         <TextField
@@ -60,16 +93,16 @@ const Form = () => {
           variant="outlined"
           label="Tags"
           fullWidth
-          value={postData.creator}
+          value={postData.tags}
           onChange={(event) =>
-            setPostData({ ...postData, tags: event.target.value })
+            setPostData({ ...postData, tags: event.target.value.split(',') })
           }
         />
         <div className={classes.fileInput}>
           <FileBase
             type="file"
             multiple={false}
-            onDone={(base64) =>
+            onDone={({ base64 }) =>
               setPostData({ ...postData, selectedFile: base64 })
             }
           />
@@ -86,7 +119,7 @@ const Form = () => {
         </Button>
         <Button
           variant="contained"
-          color="secondary"
+          color="primary"
           size="small"
           onClick={clear}
           fullWidth
